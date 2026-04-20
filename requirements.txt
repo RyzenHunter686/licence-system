@@ -1,0 +1,10 @@
+python-telegram-bot[job-queue]>=20.0
+fastapi
+uvicorn[standard]
+gunicorn
+pymongo[srv]
+pytz
+python-dotenv
+yfinance
+pandas
+matplotlib
