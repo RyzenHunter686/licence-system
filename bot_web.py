@@ -108,24 +108,36 @@ tg_app.add_handler(CallbackQueryHandler(handle_callback))
 @app.on_event("startup")
 async def startup():
     await tg_app.initialize()
+    await tg_app.start()  # Start the application logic
     if WEBHOOK_URL:
-        await tg_app.bot.set_webhook(f"{WEBHOOK_URL}/webhook")
-        logger.info(f"Webhook set to {WEBHOOK_URL}/webhook")
+        # Ensure URL is clean and starts with https
+        clean_url = WEBHOOK_URL.rstrip('/')
+        if not clean_url.startswith('https://'):
+            logger.warning("WEBHOOK_URL should start with https://")
+        
+        await tg_app.bot.set_webhook(f"{clean_url}/webhook")
+        logger.info(f"Webhook set to {clean_url}/webhook")
 
 @app.on_event("shutdown")
 async def shutdown():
+    await tg_app.stop()
     await tg_app.shutdown()
 
 @app.post("/webhook")
 async def webhook(request: Request):
-    data = await request.json()
-    update = Update.de_json(data, tg_app.bot)
-    await tg_app.process_update(update)
+    try:
+        data = await request.json()
+        update = Update.de_json(data, tg_app.bot)
+        await tg_app.process_update(update)
+    except Exception as e:
+        logger.error(f"Error processing update: {e}")
     return {"status": "ok"}
 
 @app.get("/")
+@app.head("/")
 async def health():
     return {"status": "online", "bot": "Hunter Bot License Manager"}
+
 
 @app.get("/health")
 async def health_check():
