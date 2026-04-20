@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 # Config
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI", "mongodb+srv://ryzen_hunter:Ryzhunteryt098%24%40@hunterbot.beaj4bf.mongodb.net/hunter_bot?retryWrites=true&w=majority&appName=hunterbot")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+ADMIN_ID = 8301986273
+
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 # Initialize Managers
@@ -36,31 +37,41 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
-    if query.data == 'menu_licenses':
-        await query.edit_message_text("🔑 **License Management**", reply_markup=license_menu(), parse_mode='Markdown')
-    
-    elif query.data == 'main_menu':
+    if query.data == 'main_menu':
         await query.edit_message_text("🎯 **HUNTER BOT: ADMIN PANEL**", reply_markup=main_menu(), parse_mode='Markdown')
         
+    elif query.data == 'lic_list':
+        licenses = lic_manager.list_licenses(limit=10)
+        if not licenses:
+            text = "❌ No licenses found."
+        else:
+            text = "📋 **Active Licenses**\n\n"
+            for lic in licenses:
+                status = lic.get('status', 'active').upper()
+                key = lic.get('key')
+                user = lic.get('nickname', 'N/A')
+                text += f"• `{key}` | **{user}** ({status})\n"
+        
+        await query.edit_message_text(text, reply_markup=main_menu(), parse_mode='Markdown')
+
     elif query.data == 'lic_create':
         await query.edit_message_text(
-            "➕ **Create New License**\n\n"
-            "To create a license, use the command:\n"
-            "`/create nickname days`\n"
+            "➕ **Create New Key**\n\n"
+            "Use: `/create nickname days`\n"
             "Example: `/create JohnVip 30`",
-            reply_markup=license_menu(),
+            reply_markup=main_menu(),
             parse_mode='Markdown'
         )
 
     elif query.data == 'lic_reset':
         await query.edit_message_text(
-            "🔄 **Reset Device**\n\n"
-            "To reset a device, use the command:\n"
-            "`/reset KEY`\n"
-            "Example: `/reset HT-ABCD-EFGH-IJKL`",
-            reply_markup=license_menu(),
+            "🔄 **Reset Device ID**\n\n"
+            "Use: `/reset KEY`\n"
+            "Example: `/reset HT-ABCD-EFGH`",
+            reply_markup=main_menu(),
             parse_mode='Markdown'
         )
+
 
 async def create_lic_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
