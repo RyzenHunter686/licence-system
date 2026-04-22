@@ -77,6 +77,35 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode='Markdown'
         )
 
+    elif query.data == 'lic_extend':
+        await query.edit_message_text(
+            "⏳ **Extend Duration**\n\n"
+            "Use: `/extend KEY DAYS`\n"
+            "Example: `/extend HT-ABCD 30`",
+            reply_markup=main_menu(),
+            parse_mode='Markdown'
+        )
+
+    elif query.data == 'lic_status_menu':
+        await query.edit_message_text(
+            "🛡️ **Change Status**\n\n"
+            "Use: `/status KEY active/revoked`\n"
+            "Example: `/status HT-ABCD revoked`\n\n"
+            "Or use button (coming soon for specific key)",
+            reply_markup=main_menu(),
+            parse_mode='Markdown'
+        )
+
+    elif query.data == 'lic_delete':
+        await query.edit_message_text(
+            "❌ **Delete Key**\n\n"
+            "Use: `/delete KEY`\n"
+            "Example: `/delete HT-ABCD`",
+            reply_markup=main_menu(),
+            parse_mode='Markdown'
+        )
+
+
 
 async def create_lic_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID: return
@@ -110,6 +139,41 @@ async def reset_lic_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text(f"❌ License not found or already reset.")
 
+async def extend_lic_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID: return
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text("❌ Usage: `/extend KEY DAYS`", parse_mode='Markdown')
+        return
+    key, days = context.args[0], int(context.args[1])
+    new_expiry = lic_manager.extend_license(key, days)
+    if new_expiry:
+        await update.message.reply_text(f"⏳ Extended! New expiry: `{new_expiry.strftime('%Y-%m-%d')}`", parse_mode='Markdown')
+    else:
+        await update.message.reply_text("❌ Key not found.")
+
+async def status_lic_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID: return
+    if not context.args or len(context.args) < 2:
+        await update.message.reply_text("❌ Usage: `/status KEY active/revoked`", parse_mode='Markdown')
+        return
+    key, status = context.args[0], context.args[1].lower()
+    if lic_manager.update_status(key, status):
+        await update.message.reply_text(f"🛡️ Status updated to **{status}**", parse_mode='Markdown')
+    else:
+        await update.message.reply_text("❌ Key not found.")
+
+async def delete_lic_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != ADMIN_ID: return
+    if not context.args:
+        await update.message.reply_text("❌ Usage: `/delete KEY`", parse_mode='Markdown')
+        return
+    key = context.args[0]
+    if lic_manager.delete_license(key):
+        await update.message.reply_text(f"✅ Key `{key}` deleted permanently.", parse_mode='Markdown')
+    else:
+        await update.message.reply_text("❌ Key not found.")
+
+
 # FastAPI App
 app = FastAPI()
 tg_app = ApplicationBuilder().token(TOKEN).build()
@@ -118,7 +182,11 @@ tg_app = ApplicationBuilder().token(TOKEN).build()
 tg_app.add_handler(CommandHandler("start", start))
 tg_app.add_handler(CommandHandler("create", create_lic_cmd))
 tg_app.add_handler(CommandHandler("reset", reset_lic_cmd))
+tg_app.add_handler(CommandHandler("extend", extend_lic_cmd))
+tg_app.add_handler(CommandHandler("status", status_lic_cmd))
+tg_app.add_handler(CommandHandler("delete", delete_lic_cmd))
 tg_app.add_handler(CallbackQueryHandler(handle_callback))
+
 
 
 @app.on_event("startup")
