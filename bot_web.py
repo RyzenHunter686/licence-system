@@ -126,13 +126,18 @@ async def startup():
     await tg_app.initialize()
     await tg_app.start()  # Start the application logic
     if WEBHOOK_URL:
-        # Ensure URL is clean and starts with https
-        clean_url = WEBHOOK_URL.rstrip('/')
-        if not clean_url.startswith('https://'):
-            logger.warning("WEBHOOK_URL should start with https://")
-        
-        await tg_app.bot.set_webhook(f"{clean_url}/webhook")
-        logger.info(f"Webhook set to {clean_url}/webhook")
+        try:
+            # Ensure URL is clean and starts with https
+            clean_url = WEBHOOK_URL.rstrip('/')
+            if not clean_url.startswith('https://'):
+                logger.warning("WEBHOOK_URL should start with https://")
+            
+            await tg_app.bot.set_webhook(f"{clean_url}/webhook")
+            logger.info(f"Webhook set successfully to {clean_url}/webhook")
+        except Exception as e:
+            logger.error(f"Failed to set webhook: {e}")
+            # Don't re-raise, let the app start anyway so health checks pass
+
 
 @app.on_event("shutdown")
 async def shutdown():
