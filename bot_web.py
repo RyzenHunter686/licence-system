@@ -4,7 +4,11 @@ from fastapi import FastAPI, Request
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 from license_manager import LicenseManager, IST
-from menu_templates import main_menu, license_menu
+from menu_templates import main_menu
+from dotenv import load_dotenv
+
+# Load Environment Variables
+load_dotenv()
 
 # Logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -14,6 +18,7 @@ logger = logging.getLogger(__name__)
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI", "mongodb+srv://ryzen_hunter:Ryzhunteryt098%24%40@hunterbot.beaj4bf.mongodb.net/hunter_bot?retryWrites=true&w=majority&appName=hunterbot")
 ADMIN_ID = 8301986273
+
 
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
