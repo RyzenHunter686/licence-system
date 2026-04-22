@@ -5,6 +5,3 @@ gunicorn
 pymongo[srv]
 pytz
 python-dotenv
-yfinance
-pandas
-matplotlib
